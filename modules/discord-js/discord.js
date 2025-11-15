@@ -1,5 +1,5 @@
 import { Client, GatewayIntentBits, Events } from 'discord.js'
-
+import { parseMessage } from './functions/msg-handler'
 export class DiscordSocket {
     constructor() {
         this.client = null
@@ -40,12 +40,20 @@ export class DiscordSocket {
         })
         this.client.on(Events.MessageCreate, async (msg) => {
             if (msg.author.bot) return
-            console.log({
-                from: msg.author.username,
-                userId: msg.author.id,
-                channel: msg.channel.id,
-                server: msg.guild.id,
-            })
+            let referenceObject = {}
+            if (msg.reference && msg.reference.messageId) {
+                try {
+                    const replied = await msg.fetchReference()
+                    referenceObject = parseMessage(replied)
+                } catch (e) {
+                    referenceObject = { error: "Original message not found" }
+                }
+            }
+            const payload = {
+                ...parseMessage(msg),
+                reference: referenceObject
+            }
+            console.log(payload)
         })
     }
 }
